@@ -1,16 +1,32 @@
 import { useState } from 'react';
+import { IoAddCircle, IoCloseCircle, IoSend } from 'react-icons/io5';
 
 export default function Home() {
-  const [form, setForm] = useState({ keyword1: '', keyword2: '' });
+  const [keywords, setKeywords] = useState(['']);
   const [result, setResult] = useState(null);
-  const [similarWords, setSimilarWords] = useState([]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) =>
-    setForm({ ...form, [e.target.name]: e.target.value });
+  // 入力欄の変更処理
+  const handleChange = (index: number, value: string) => {
+    const newKeywords = [...keywords];
+    newKeywords[index] = value;
+    setKeywords(newKeywords);
+  };
 
-  // キーワードから検索
+  // 入力欄の追加
+  const handleAdd = () => {
+    setKeywords([...keywords, '']);
+  };
+
+  // 入力欄の削除
+  const handleRemove = (index: number) => {
+    const newKeywords = [...keywords];
+    newKeywords.splice(index, 1);
+    setKeywords(newKeywords);
+  };
+
+  // 検索
   const handleSearch = async () => {
-    const query = [form.keyword1, form.keyword2].filter(Boolean).join(' ');
+    const query = keywords.filter(Boolean).join(' ');
     const res = await fetch('/api/search', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -19,53 +35,45 @@ export default function Home() {
     setResult(await res.json());
   };
 
-  // 類語検索
-  const handleSimilarWords = async () => {
-    const res = await fetch('/api/keyword', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ keyword: form.keyword1.trim() }),
-    });
-    setSimilarWords(await res.json());
-  };
-
   return (
     <section className="main">
       <div className="search-box">
-        <input
-          type="text"
-          name="keyword1"
-          value={form.keyword1}
-          onChange={handleChange}
-          placeholder="キーワード1"
-        />
-        <p>x</p>
-        <input
-          type="text"
-          name="keyword2"
-          value={form.keyword2}
-          onChange={handleChange}
-          placeholder="キーワード2"
-        />
+        <h3>アイデアを検索</h3>
+
+        <div className="search-item">
+          {keywords.map((kw, i) => (
+            <div key={i} className="input-row">
+              <input
+                type="text"
+                value={kw}
+                onChange={(e) => handleChange(i, e.target.value)}
+                placeholder={`キーワード${i + 1}`}
+              />
+              {keywords.length > 1 && (
+                <div className="close-button">
+                  <IoCloseCircle onClick={() => handleRemove(i)} />
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+
+        <div className="form-footer">
+          <div className="button-back" onClick={handleAdd}>
+            <IoAddCircle />
+          </div>
+
+          <div className="button-back">
+            <IoSend onClick={handleSearch} />
+          </div>
+        </div>
       </div>
 
-      <button onClick={handleSearch}>検索</button>
-
-      <div className="result">
-        {result && <pre>{JSON.stringify(result, null, 2)}</pre>}
-      </div>
-
-      <button onClick={handleSimilarWords}>similar words</button>
-
-      <div className="result">
-        {similarWords.length > 0 && (
-          <ul>
-            {similarWords.map((item: any, i: number) => (
-              <li key={i}>{item.word}</li>
-            ))}
-          </ul>
-        )}
-      </div>
+      {result && (
+        <div className="result">
+          <pre>{JSON.stringify(result, null, 2)}</pre>
+        </div>
+      )}
     </section>
   );
 }
