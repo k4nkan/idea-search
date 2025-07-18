@@ -1,38 +1,31 @@
 import { useState } from 'react';
 import { IoAddCircle, IoCloseCircle, IoSend } from 'react-icons/io5';
+import { searchIdeas } from '../lib/api';
 
 export default function Home() {
   const [keywords, setKeywords] = useState(['']);
   const [result, setResult] = useState(null);
 
-  // 入力欄の変更処理
-  const handleChange = (index: number, value: string) => {
-    const newKeywords = [...keywords];
-    newKeywords[index] = value;
-    setKeywords(newKeywords);
+  const handleChange = (i: number, value: string) => {
+    const newKw = [...keywords];
+    newKw[i] = value;
+    setKeywords(newKw);
   };
 
-  // 入力欄の追加
-  const handleAdd = () => {
-    setKeywords([...keywords, '']);
+  const handleAdd = () => setKeywords([...keywords, '']);
+  const handleRemove = (i: number) => {
+    const newKw = [...keywords];
+    newKw.splice(i, 1);
+    setKeywords(newKw);
   };
 
-  // 入力欄の削除
-  const handleRemove = (index: number) => {
-    const newKeywords = [...keywords];
-    newKeywords.splice(index, 1);
-    setKeywords(newKeywords);
-  };
-
-  // 検索
-  const handleSearch = async () => {
-    const query = keywords.filter(Boolean).join(' ');
-    const res = await fetch('/api/search', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query }),
-    });
-    setResult(await res.json());
+  const onSearch = async () => {
+    try {
+      const res = await searchIdeas(keywords);
+      setResult(res);
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   return (
@@ -64,7 +57,7 @@ export default function Home() {
           </div>
 
           <div className="button-back">
-            <IoSend onClick={handleSearch} />
+            <IoSend onClick={onSearch} />
           </div>
         </div>
       </div>
