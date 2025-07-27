@@ -1,79 +1,66 @@
-import { useState } from 'react';
-import { IoAddCircle, IoCloseCircle, IoSend } from 'react-icons/io5';
+'use client';
+
+import { useState, useEffect } from 'react';
+import Search from './components/Search';
+import Loading from './components/Loading';
+import Result from './components/Result';
+
+type Step = 'search' | 'loading' | 'result';
 
 export default function Home() {
-  const [keywords, setKeywords] = useState(['']);
-  const [result, setResult] = useState(null);
+  const [step, setStep] = useState<Step>('search');
+  const [query, setQuery] = useState('');
+  const [result, setResult] = useState<any>(null); // ← 検索結果用
 
-  // 入力欄の変更処理
-  const handleChange = (index: number, value: string) => {
-    const newKeywords = [...keywords];
-    newKeywords[index] = value;
-    setKeywords(newKeywords);
+  // 検索の実行
+  const handleSearch = (q: string) => {
+    const trimmed = q.trim();
+    if (!trimmed) return;
+
+    setQuery(trimmed);
+    setStep('loading');
   };
 
-  // 入力欄の追加
-  const handleAdd = () => {
-    setKeywords([...keywords, '']);
+  // トップに戻る
+  const handleReset = () => {
+    setQuery('');
+    setResult(null);
+    setStep('search');
   };
 
-  // 入力欄の削除
-  const handleRemove = (index: number) => {
-    const newKeywords = [...keywords];
-    newKeywords.splice(index, 1);
-    setKeywords(newKeywords);
-  };
+  // ローディング中に API へリクエスト
+  useEffect(() => {
+    const fetchResult = async () => {
+      try {
+        const res = await fetch('/api/search', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query }),
+        });
 
-  // 検索
-  const handleSearch = async () => {
-    const query = keywords.filter(Boolean).join(' ');
-    const res = await fetch('/api/search', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query }),
-    });
-    setResult(await res.json());
-  };
+        if (!res.ok) throw new Error('API error');
+        const data = await res.json();
+        setResult(data);
+        setStep('result');
+      } catch (err) {
+        console.error('検索失敗:', err);
+        setResult({ error: '検索中にエラーが発生しました' });
+        setStep('result');
+      }
+    };
+
+    if (step === 'loading') {
+      fetchResult();
+    }
+  }, [step, query]);
 
   return (
-    <section className="main">
-      <div className="search-box">
-        <h3>アイデアを検索</h3>
-
-        <div className="search-item">
-          {keywords.map((kw, i) => (
-            <div key={i} className="input-row">
-              <input
-                type="text"
-                value={kw}
-                onChange={(e) => handleChange(i, e.target.value)}
-                placeholder={`キーワード${i + 1}`}
-              />
-              {keywords.length > 1 && (
-                <div className="close-button">
-                  <IoCloseCircle onClick={() => handleRemove(i)} />
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-
-        <div className="form-footer">
-          <div className="button-back" onClick={handleAdd}>
-            <IoAddCircle />
-          </div>
-
-          <div className="button-back">
-            <IoSend onClick={handleSearch} />
-          </div>
-        </div>
-      </div>
-
-      {result && (
-        <div className="result">
-          <pre>{JSON.stringify(result, null, 2)}</pre>
-        </div>
+    <main>
+      {step === 'search' && <Search onSubmit={handleSearch} />}
+      {step === 'loading' && <Loading />}
+      {step === 'result' && (
+        <Result query={query} result={result} onReset={handleReset} />
       )}
-    </section>
+    </main>
   );
 }

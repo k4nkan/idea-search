@@ -48,6 +48,9 @@ textarea {
   border: none;
   font-family: inherit; /* フォントを継承 */
   font-size: inherit; /* フォントサイズを継承 */
+  outline: none;
+  box-shadow: none;
+  border: none;
 }
 
 /* リンクのデフォルトのアンダーラインを削除（必要であれば） */
