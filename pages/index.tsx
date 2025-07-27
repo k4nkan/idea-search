@@ -1,72 +1,60 @@
 import { useState } from 'react';
-import { IoAddCircle, IoCloseCircle, IoSend } from 'react-icons/io5';
-import { searchIdeas } from '../lib/api';
+import { generateQuery } from '../lib/query';
 
 export default function Home() {
-  const [keywords, setKeywords] = useState(['']);
-  const [result, setResult] = useState(null);
+  const [query, setQuery] = useState('');
+  const [result, setResult] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
 
-  const handleChange = (i: number, value: string) => {
-    const newKw = [...keywords];
-    newKw[i] = value;
-    setKeywords(newKw);
-  };
+  const handleSearch = async () => {
+    if (!query.trim()) return;
 
-  const handleAdd = () => setKeywords([...keywords, '']);
-  const handleRemove = (i: number) => {
-    const newKw = [...keywords];
-    newKw.splice(i, 1);
-    setKeywords(newKw);
-  };
+    const formattedQuery = generateQuery(query);
 
-  const onSearch = async () => {
     try {
-      const res = await searchIdeas(keywords);
-      setResult(res);
+      setLoading(true);
+      const res = await fetch('/api/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: formattedQuery }),
+      });
+
+      if (!res.ok) throw new Error('検索に失敗しました');
+      const data = await res.json();
+      setResult(data);
     } catch (err) {
       console.error(err);
+      setResult({ error: '検索中にエラーが発生しました' });
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <section className="main">
-      <div className="search-box">
-        <h3>アイデアを検索</h3>
+    <main>
+      <h1>アイデア検索</h1>
 
-        <div className="search-item">
-          {keywords.map((kw, i) => (
-            <div key={i} className="input-row">
-              <input
-                type="text"
-                value={kw}
-                onChange={(e) => handleChange(i, e.target.value)}
-                placeholder={`キーワード${i + 1}`}
-              />
-              {keywords.length > 1 && (
-                <div className="close-button">
-                  <IoCloseCircle onClick={() => handleRemove(i)} />
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-
-        <div className="form-footer">
-          <div className="button-back" onClick={handleAdd}>
-            <IoAddCircle />
-          </div>
-
-          <div className="button-back">
-            <IoSend onClick={onSearch} />
-          </div>
-        </div>
+      <div>
+        <input
+          type="text"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="例: AIを使った新しいツール"
+        />
       </div>
 
+      <button onClick={handleSearch} disabled={loading || !query.trim()}>
+        {loading ? '検索中...' : '検索'}
+      </button>
+
       {result && (
-        <div className="result">
-          <pre>{JSON.stringify(result, null, 2)}</pre>
+        <div>
+          <h2>検索結果</h2>
+          <pre style={{ whiteSpace: 'pre-wrap' }}>
+            {JSON.stringify(result, null, 2)}
+          </pre>
         </div>
       )}
-    </section>
+    </main>
   );
 }
