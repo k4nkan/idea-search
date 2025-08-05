@@ -7,10 +7,17 @@ import Result from './components/Result';
 
 type Step = 'search' | 'loading' | 'result';
 
+type ApiResponse = {
+  results: {
+    title: string;
+    url: string;
+  }[];
+};
+
 export default function Home() {
   const [step, setStep] = useState<Step>('search');
   const [query, setQuery] = useState('');
-  const [result, setResult] = useState<any>(null); // ← 検索結果用
+  const [result, setResult] = useState<ApiResponse>(null);
 
   // 検索の実行
   const handleSearch = (q: string) => {
@@ -43,9 +50,8 @@ export default function Home() {
         setResult(data);
         setStep('result');
       } catch (err) {
-        console.error('検索失敗:', err);
-        setResult({ error: '検索中にエラーが発生しました' });
-        setStep('result');
+        alert(err);
+        setStep('search');
       }
     };
 
