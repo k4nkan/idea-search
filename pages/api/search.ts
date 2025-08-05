@@ -23,8 +23,7 @@ export default async function handler(
       },
       body: JSON.stringify({
         query,
-        search_depth: 'basic',
-        include_answer: true,
+        search_depth: 'advanced',
       }),
     });
 
