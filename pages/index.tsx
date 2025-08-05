@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Search from './components/Search';
-import Loading from './components/Loading';
-import Result from './components/Result';
+import Search from '../components/Search';
+import Loading from '../components/Loading';
+import Result from '../components/Result';
 
 type Step = 'search' | 'loading' | 'result';
 
